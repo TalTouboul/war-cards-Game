@@ -125,7 +125,7 @@ int fun_game(PD pd1, PD pd2)
 	pd2.countercards = sizeOFfullDECK / 2;
 	char exitGAME = ' ';
 	int battlewinner = 0;
-	while (pd1.countercards != 0 && pd2.countercards != 0)
+	while (pd1.countercards > 0 && pd2.countercards > 0)
 	{
 		if (exitGAME == ' ')
 		{
