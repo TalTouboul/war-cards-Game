@@ -35,29 +35,42 @@ void fun_strCARD(char s[4][sizeOFpattern], int card1, int card2);
 void fun_printLETTER(char pattern[sizeOFpattern]);
 void fun_printCARD(char s1[], char s2[]);
 void fun_printfWAR(int bank[], char user1[], char user2[], int winner);
+void save(PD p1, PD p2);
+int load(PD* pd1, PD* pd2);
 
 int main() 
 {
-	int i;
+	int i, succeeded = 0;
+	char loadGAME;
 	int exitgame;
 	PD pd1, pd2;
 	int winner;
 	int arrDECK[numOFcards] = { 0 };
 	
 	printf("welcome to war cards game\n\n");
-	exitgame = fun_chose_players(pd1.UserName, pd2.UserName);
-	if (!exitgame) { return 0; }
-	for (i = 0; i < numOFcards; i++) 
-	{ 
-		arrDECK[i] = 4; 
-		pd1.PDarr[i] = 0;
-		pd2.PDarr[i] = 0;
+	printf("if you would you like to continue the saved game, if yes press Y==> ");
+	loadGAME = _getch();
+	printf("\n\n");
+	if (loadGAME == 'Y' || loadGAME == 'y') 
+	{
+		succeeded = load(&pd1, &pd2);
 	}
-	arrDECK[numOFcards - 1] = 2;  //only 2 jokers in the deck
-	fun_spilts_decks(arrDECK, pd1.PDarr);
-	fun_spilts_decks(arrDECK, pd2.PDarr);
+	if(!succeeded)
+	{
+		exitgame = fun_chose_players(pd1.UserName, pd2.UserName);
+		if (!exitgame) { return 0; }
+		for (i = 0; i < numOFcards; i++)
+		{
+			arrDECK[i] = 4;
+			pd1.PDarr[i] = 0;
+			pd2.PDarr[i] = 0;
+		}
+		arrDECK[numOFcards - 1] = 2;  //only 2 jokers in the deck
+		fun_spilts_decks(arrDECK, pd1.PDarr);
+		fun_spilts_decks(arrDECK, pd2.PDarr);
+	}
 	winner = fun_game(pd1, pd2);
-	if (winner == 0) { printf("Well... guess it ended in a draw\n"); }
+	if (winner == 0) { printf("hope that we could continue the game...\n"); }
 	if (winner == 1) { printf("the winner is:%s\n", pd1.UserName); }
 	if (winner == 2) { printf("the winner is:%s\n", pd2.UserName); }
 	
@@ -123,16 +136,31 @@ int fun_game(PD pd1, PD pd2)
 {
 	pd1.countercards = sizeOFfullDECK / 2;
 	pd2.countercards = sizeOFfullDECK / 2;
-	char exitGAME = ' ';
+	char continueGAME = ' ';
+	char saveGAME;
+	int saved = 0;
 	int battlewinner = 0;
-	while (pd1.countercards > 0 && pd2.countercards > 0)
+	while (pd1.countercards != 0 && pd2.countercards != 0)
 	{
-		if (exitGAME == ' ')
+		if (continueGAME == ' ')
 		{
 			printf("press the [spacebar] to lay cards\n");
 			printf("or any key to go the end game...\n\n");
-			exitGAME = _getch();
+			continueGAME = _getch();
 			system("cls");
+		}
+		if (continueGAME != ' '&& !saved) 
+		{
+			printf("before you exit would you like to save the game, if yes press Y==> ");
+			saveGAME = _getch();
+			printf("\n\n");
+			if (saveGAME == 'Y' || saveGAME == 'y') 
+			{ 
+				save(pd1, pd2); 
+				battlewinner = 0;
+				break;
+			}
+			else { saved++; }
 		}
 		pd1.newcard = rec_fun_random_newcard(pd1.PDarr);
 		pd2.newcard = rec_fun_random_newcard(pd2.PDarr);
@@ -146,10 +174,10 @@ int fun_game(PD pd1, PD pd2)
 			compare_cards(pd2, pd1, &pd2.countercards, &pd1.countercards);
 			battlewinner = 2;
 		}
-		if (exitGAME == ' ') { fun_printROUND(pd1, pd2, battlewinner); }
+		if (continueGAME == ' ') { fun_printROUND(pd1, pd2, battlewinner); }
 		if (pd1.newcard == pd2.newcard)
 		{
-			battlewinner = fun_war(pd1, pd2, &pd1.countercards, &pd2.countercards, exitGAME);
+			battlewinner = fun_war(pd1, pd2, &pd1.countercards, &pd2.countercards, continueGAME);
 		}
 		
 	}
@@ -202,7 +230,6 @@ int fun_war(PD pd1, PD pd2, int* counter1, int* counter2, char exitGAME)
 		counterWARS++;
 		if (exitGAME == ' ') { fun_printROUND(pd1, pd2, winner); }
 	}
-	
 	if (pd1.newcard > pd2.newcard) 
 	{
 		fun_emptyBANK(pd1, bank, &counter1); 
@@ -365,3 +392,31 @@ void fun_printfWAR(int bank[], char user1[],char user2[],int winner)
 	}
 printf("\n\n");
 }
+void save(PD p1, PD p2) 
+{
+	FILE* f = fopen("playersDECKS.bin", "wb");
+	if (f == NULL) { printf("failed to save the game\n"); }
+	else 
+	{
+		fwrite(&p1, sizeof(PD), 1, f);
+		fwrite(&p2, sizeof(PD), 1, f);
+		fclose(f);
+	}
+}
+int load(PD* pd1, PD* pd2) 
+{
+	FILE* f;
+	f = fopen("playersDECKS.bin", "rb");
+	if (f == NULL) 
+	{ 
+		printf("there is no saved game, let's start a new game\n\n"); 
+		return 0;
+	}
+	else 
+	{
+		fread(pd1, sizeof(PD), 1, f);
+		fread(pd2, sizeof(PD), 1, f);
+		return 1;
+	}
+}
+
