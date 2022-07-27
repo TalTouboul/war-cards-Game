@@ -416,6 +416,7 @@ int load(PD* pd1, PD* pd2)
 	{
 		fread(pd1, sizeof(PD), 1, f);
 		fread(pd2, sizeof(PD), 1, f);
+		fclose(f);
 		return 1;
 	}
 }
